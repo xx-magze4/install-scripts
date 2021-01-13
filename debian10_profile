@@ -1,0 +1,37 @@
+#!/bin/bash
+
+lsa () {
+  clear
+  pwd
+  printf "\n"
+  ls -a
+  printf "\n" && bash -l
+}
+
+micro-install () {
+  profile="$HOME/.bash_profile"
+  startup_script="$HOME/micro_startup"
+  if [ ! -d "$HOME/bin" ]; then
+    mkdir bin
+  fi
+  if [ ! -f "$profile" ]; then
+    echo '#!/bin/bash' > "$profile"
+  fi
+  if ! command -v curl &> /dev/null; then
+    yes | sudo apt install curl
+  fi
+  curl https://getmic.ro | bash && mv micro bin/
+  added_to_path=$(cat "$profile" | grep 'export PATH="$HOME/bin:$PATH"')
+  if [ ${#added_to_path} -lt 1 ]; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "$profile"
+  fi
+  echo "source \"$startup_script\"" >> "$profile"
+cat >$startup_script <<EOL
+  cat "$profile" | grep -v 'source "$startup_script"' > .tmp &&
+  mv .tmp "$profile" && micro && rm -- "$0" && rm -- "$startup_script"
+EOL
+  chmod u+x $startup_script
+}
+
+micro-install && lsa
+
